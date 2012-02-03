@@ -219,7 +219,7 @@ namespace hdf5
 		//cout << endl << "Dimensions are " << dimentions << " with dims " << dims
 		//	 << " and maxdims " << maxdims << " and total length " << length << endl;
 		
-		int image[dims][dims];
+		int image[dims][dims];  // TODO: make this work for non-square matricies
 		status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &image);
 
 		data.data.resize(dims);
@@ -237,7 +237,9 @@ namespace hdf5
 		}
 
 		// Close hdf5 stuff
-		//delete image;
+		for(int i = 0; i < dims; ++i)
+			delete[] image[i];
+		delete[] image;
 		status = H5Sclose(space_id);
 		status = H5Dclose(dataset_id);
 		status = H5Fclose(file_id);
@@ -323,7 +325,7 @@ namespace hdf5
 		hid_t file_id, dataset_id, space_id, property_id; 
 		herr_t status;
 
-		int data[matrix.rows][matrix.cols];		
+		int image[matrix.rows][matrix.cols];		
 		
 		// Loop through data
 		for(int m = 0; m < matrix.rows; ++m)
@@ -331,7 +333,7 @@ namespace hdf5
 			for(int n = 0; n < matrix.cols; ++n)
 			{
 				// Save next number to matrix
-				data[m][n] = matrix.data[m][n];
+				image[m][n] = matrix.data[m][n];
 			}
 			//cout << endl;
 		}
@@ -355,12 +357,18 @@ namespace hdf5
 		dataset_id = H5Dcreate (file_id, "DATASET", H5T_STD_I32LE, space_id, H5P_DEFAULT, property_id, H5P_DEFAULT);
    
 		//Write the data to the dataset.
-		status = H5Dwrite (dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &data);
+		status = H5Dwrite (dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &image);
 
+		// Close H5 stuff
 		status = H5Sclose(space_id);
 		status = H5Dclose(dataset_id);
 		status = H5Fclose(file_id);
 		status = H5Pclose(property_id);
+
+		// Delete variable
+		for(int i = 0; i < matrix.cols; ++i)
+			delete[] image[i];
+		delete[] image;		
 	}
 	
 };
