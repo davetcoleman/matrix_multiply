@@ -24,6 +24,7 @@ using namespace std;
 // Matrix Structure
 //-------------------------------------------------------------------------------------------
 struct matrix{
+	
 	vector< vector<int> > data;
 	int rows;
 	int cols;
