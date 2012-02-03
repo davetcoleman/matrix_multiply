@@ -13,13 +13,18 @@
 
 #include <iostream>
 #include <fstream>
+#include <istream>
+#include <iterator>
 #include <algorithm>
 #include <vector>
 #include "hdf5.h"
 
+using namespace std;
+
 /* Prototypes -------------------------------------------------------- */
 namespace hdf5
 {
+	void hdf5_to_txt(const std::string &file_in, const std::string &file_out);	
 	void read(const std::string &filename, std::vector<int> &data);
 	void write(const std::string &filename, std::vector<int> &data);
 };
@@ -42,27 +47,28 @@ int main(int argc, char ** argv)
 	if(file_in.substr(file_in.find_last_of(".") + 1) == "txt") {
 		std::cout << file_in << " is a TXT file " << std::endl;
 	}else if(file_in.substr(file_in.find_last_of(".") + 1) == "hdf5") {
-		std::cout << file_in << " is a HDF5 file " << std::endl;
 
-		// Read the hdf5 file
-		std::vector<int> results;		
-		hdf5::read(file_in, results);
+		// INPUT = HDF5		
+		if(file_out.substr(file_out.find_last_of(".") + 1) == "txt") {
+			// OUTPUT = TXT
+			std::cout << "HDF5 to TXT" << std::endl;
+			hdf5::hdf5_to_txt(file_in, file_out);
+		}else if(file_out.substr(file_out.find_last_of(".") + 1) == "hdf5") {
+			// OUTPUT = HDF5
+			std::cout << "HDF5 to HDF5" << std::endl;
+			
+			fstream f(file_in.c_str(), fstream::in|fstream::binary);
+			f << noskipws;
+			istream_iterator<unsigned char> begin(f);
+			istream_iterator<unsigned char> end;
 
-		// Open a file to save to
-		std::ofstream outfile;
-		outfile.open (file_out.c_str());
-		outfile << "0 0\n";
+			fstream f2(file_out.c_str(), fstream::out|fstream::trunc|fstream::binary);
+			ostream_iterator<char> begin2(f2);
 
-		// Save the contents to file
-		for(int i=0; i<results.size(); ++i)
-		{
-			outfile << results[i] << " ";
+			copy(begin, end, begin2);
 		}
-
-		// Close the file
-		outfile.close();
 	}
-
+	
 	/*
 	  std::vector<int> values(30,10);
 	  std::fill (values.begin(),values.begin()+10,5); 
@@ -79,6 +85,51 @@ int main(int argc, char ** argv)
 
 namespace hdf5
 {
+
+	void hdf5_to_txt(const std::string &file_in, const std::string &file_out)
+	{
+		hid_t file_id, dataset_id, space_id; 
+		herr_t status;
+	
+		file_id = H5Fopen(file_in.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+		dataset_id = H5Dopen(file_id, "DATASET", H5P_DEFAULT);
+		space_id = H5Dget_space(dataset_id);
+
+		int length = H5Sget_simple_extent_npoints(space_id);
+		
+		// Get actual dimentions:
+		hsize_t dims, maxdims;
+		int dimentions = H5Sget_simple_extent_dims(space_id, &dims, &maxdims);
+		std::cout << "Dimensions are " << dimentions << " with dims " << dims
+				  << " and maxdims " << maxdims << " and total length " << length << std::endl;
+		
+		int image[dims][dims];
+		status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &image);
+
+		std::cout << "here" << std::endl;
+		
+		// Open a file to save to
+		std::ofstream outfile;
+		outfile.open (file_out.c_str());
+		outfile << dims << " " << dims << std::endl;
+
+		// Save to file
+		for (int i=0; i<dims; i++) {
+			for (int j=0; j<dims; j++)
+      			outfile << image[i][j] << " ";
+			outfile << std::endl;
+		}
+		
+
+		// Close hdf5 stuff
+		//delete [] image;
+		status = H5Sclose(space_id);
+		status = H5Dclose(dataset_id);
+		status = H5Fclose(file_id);
+		
+		// Close the txt file
+		outfile.close();			   
+	}
 
 	void read(const std::string &filename, std::vector<int> &data)
 	{
