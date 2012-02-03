@@ -12,22 +12,30 @@
 #include <iostream>
 #include <fstream>
 #include <istream>
-#include <iterator>
 #include <iomanip>
 #include <sstream>
-#include <algorithm>
 #include <vector>
+#include <sys/time.h>
 #include "hdf5.h"
 
 using namespace std;
 
+//-------------------------------------------------------------------------------------------
+// Matrix Structure
+//-------------------------------------------------------------------------------------------
 struct matrix{
 	vector< vector<int> > data;
 	int rows;
 	int cols;
 };
 	
-/* Prototypes -------------------------------------------------------- */
+//-------------------------------------------------------------------------------------------
+// Prototypes
+//-------------------------------------------------------------------------------------------
+void ioMatrix(bool in, const string &filename, matrix &data );
+double get_time();
+void naive_multiply( matrix &matrix1, matrix &matrix2, matrix &matrix_out);
+
 namespace hdf5
 {
 	void read_hdf5(const string &filename, matrix &data);
@@ -35,8 +43,10 @@ namespace hdf5
 	void write_hdf5(const string &filename, matrix &data);	
 	void write_txt(const string &filename, matrix &data);
 };
-void ioMatrix(bool in, const string &filename, matrix &data );
 
+//-------------------------------------------------------------------------------------------
+// main
+//-------------------------------------------------------------------------------------------
 int main(int argc, char ** argv)
 {
 	// Check that 3 file names have been inputted
@@ -70,6 +80,35 @@ int main(int argc, char ** argv)
 
 	// Create the output matrix
 	matrix matrix_out;
+
+	// Do the multiplication:
+	int number_runs = 1000; // increase this to do benchmarking
+	double start, end; // for benchmarking
+	start = get_time();
+	
+	for(int test = 0; test < number_runs; ++test)
+	{
+		// Do the multiply
+		naive_multiply(matrix1, matrix2, matrix_out);	
+	}
+	end = get_time();
+
+	if(number_runs > 1)
+	{
+		cout << "Matrix Multiply ran in " << (end-start) << " seconds " << endl;
+		cout << endl;
+	}	
+
+	// Now write output matrix to chosen filetype
+	ioMatrix(false, file_out, matrix_out);
+	
+    return EXIT_SUCCESS;
+}
+//-------------------------------------------------------------------------------------------
+// Multiply Method 1
+//-------------------------------------------------------------------------------------------
+void naive_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out)
+{
 	// Rows = rows of left matrix
 	matrix_out.rows = matrix1.rows;
 	matrix_out.cols = matrix2.cols;
@@ -91,45 +130,78 @@ int main(int argc, char ** argv)
 				// Calculate and add to current cell
 				total += matrix1.data[i][k] * matrix2.data[k][j];
 
-				cout << matrix1.data[i][k] << " times " << matrix2.data[k][j] <<
-					" - " << i << " " << k << " x " << k << " " << j << endl;
+				//cout << matrix1.data[i][k] << " times " << matrix2.data[k][j] <<
+				//	" - " << i << " " << k << " x " << k << " " << j << endl;
 			}
 
-			cout << i << " " << j << " equals " << total << endl;
+			//cout << i << " " << j << " equals " << total << endl;
 			
 			// Output answer to matrix
 			matrix_out.data[i][j] = total;
 		}
 	}
-
-	// Now write output matrix to chosen filetype
-	ioMatrix(false, file_out, matrix_out);
-	
-    return EXIT_SUCCESS;
 }
 
+//-------------------------------------------------------------------------------------------
+// Read and write matrix depending on file type
+//-------------------------------------------------------------------------------------------
 void ioMatrix(bool in, const string &filename, matrix &data )
 {
-	// Determine what file type is the input file
-	if(filename.substr(filename.find_last_of(".") + 1) == "txt") {
+	int number_runs = 1; // increase this to do benchmarking
+	double start, end; // for benchmarking
+	start = get_time();
+	
+	for(int test = 0; test < number_runs; ++test)
+	{
+	
+		// Determine what file type is the input file
+		if(filename.substr(filename.find_last_of(".") + 1) == "txt") {
 
-		if(in)
-			hdf5::read_txt(filename, data);
-		else
-			hdf5::write_txt(filename, data);
+			if(in)
+				hdf5::read_txt(filename, data);
+			else
+				hdf5::write_txt(filename, data);
 		
-	}else if(filename.substr(filename.find_last_of(".") + 1) == "hdf5") {
+		}else if(filename.substr(filename.find_last_of(".") + 1) == "hdf5") {
 
-		if(in)
-			hdf5::read_hdf5(filename, data);
-		else
-			hdf5::write_hdf5(filename, data);
+			if(in)
+				hdf5::read_hdf5(filename, data);
+			else
+				hdf5::write_hdf5(filename, data);
+		}
 	}
+	end = get_time();
+
+	if(number_runs > 1)
+	{
+		cout << "IO Test ran in " << (end-start) << " seconds " << endl;
+		cout << "File type: " << filename.substr(filename.find_last_of(".") + 1) << endl;
+		if(in)
+			cout << "Input" << endl;
+		else
+			cout << "Output" << endl;
+		cout << endl;
+	}
+	
 }
+
+//-------------------------------------------------------------------------------------------
+// For benchmarking
+//-------------------------------------------------------------------------------------------
+double get_time()
+{
+	struct timeval t;
+	struct timezone tzp;
+	gettimeofday(&t, &tzp);
+	return t.tv_sec + t.tv_usec*1e-6;
+}
+
 
 namespace hdf5
 {
-
+	//-------------------------------------------------------------------------------------------
+	// Read hdf5
+	//-------------------------------------------------------------------------------------------
 	void read_hdf5(const string &filename, matrix &data )
 	{
 		hid_t file_id, dataset_id, space_id; 
@@ -144,8 +216,8 @@ namespace hdf5
 		// Get actual dimentions:
 		hsize_t dims, maxdims;
 		int dimentions = H5Sget_simple_extent_dims(space_id, &dims, &maxdims);
-		cout << endl << "Dimensions are " << dimentions << " with dims " << dims
-			 << " and maxdims " << maxdims << " and total length " << length << endl;
+		//cout << endl << "Dimensions are " << dimentions << " with dims " << dims
+		//	 << " and maxdims " << maxdims << " and total length " << length << endl;
 		
 		int image[dims][dims];
 		status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &image);
@@ -158,12 +230,11 @@ namespace hdf5
 		for (int i=0; i<dims; i++) {
 			data.data[i].resize(dims);
 			for (int j=0; j<dims; j++) {
-      			cout << image[i][j] << " ";
+      			//cout << image[i][j] << " ";
 				data.data[i][j] = image[i][j];
 			}
-			cout << endl;
+			//cout << endl;
 		}
-		cout << endl;
 
 		// Close hdf5 stuff
 		//delete image;
@@ -172,7 +243,9 @@ namespace hdf5
 		status = H5Fclose(file_id);
 		
 	}
-	
+	//-------------------------------------------------------------------------------------------
+	// Read txt
+	//-------------------------------------------------------------------------------------------	
 	void read_txt(const string &filename, matrix &data)
 	{
 		// Read the txt file into a vector
@@ -216,12 +289,14 @@ namespace hdf5
 			}
 			//cout << endl;
 		}
-		cout << rows << " --- " << cols << endl;
+		//cout << rows << " --- " << cols << endl;
 		
-		cout << "data = " << data.data[1][1] << endl;
+		//cout << "data = " << data.data[1][1] << endl;
 
 	}
-
+	//-------------------------------------------------------------------------------------------
+	// Write txt
+	//-------------------------------------------------------------------------------------------
 	void write_txt(const string &filename, matrix &data)	
 	{
 		// Open a file to save to
@@ -239,7 +314,9 @@ namespace hdf5
 		// Close the txt file
 		outfile.close();			   
 	}
-
+	//-------------------------------------------------------------------------------------------
+	// Write hdf5
+	//-------------------------------------------------------------------------------------------
 	void write_hdf5(const string &filename, matrix &matrix)
 	{
 		// HDF5 handles
@@ -260,7 +337,7 @@ namespace hdf5
 		}
 		hsize_t  dims[2] = {matrix.rows, matrix.cols};
 
-		cout << "DIMS ARE " << dims[0] << " " << dims[1] << endl;
+		//cout << "DIMS ARE " << dims[0] << " " << dims[1] << endl;
     
 		//Create a new file using the default properties.
 		file_id = H5Fcreate (filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
