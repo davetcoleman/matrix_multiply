@@ -25,7 +25,8 @@ using namespace std;
 //-------------------------------------------------------------------------------------------
 struct matrix{
 	
-	vector< vector<int> > data;
+	//	vector< vector<int> > data;
+	int *data;
 	int rows;
 	int cols;
 };
@@ -36,6 +37,7 @@ struct matrix{
 void ioMatrix(bool in, const string &filename, matrix &data );
 double get_time();
 void naive_multiply( matrix &matrix1, matrix &matrix2, matrix &matrix_out);
+void printMatrix(matrix &data);
 
 namespace hdf5
 {
@@ -53,8 +55,26 @@ int main(int argc, char ** argv)
 	// Check that 3 file names have been inputted
 	if(argc < 4)
 	{
-		cout << "Insufficient file name inputs provided" << endl;
-		return EXIT_FAILURE;
+		if(argc < 3)
+		{
+			cout << "Insufficient file name inputs provided" << endl;
+			return EXIT_FAILURE;
+		}
+		else // do a converstion!
+		{
+			cout << "Converting files" << endl;
+			// Read in values
+			string file_in1 = argv[1];
+			string file_out = argv[2];
+	
+			// Read and write matrix
+			matrix matrix1;
+			ioMatrix(true, file_in1, matrix1);
+			ioMatrix(false, file_out, matrix1);
+
+			// Done with program
+			return EXIT_SUCCESS;
+		}
 	}
 
 	// Read in values
@@ -65,11 +85,13 @@ int main(int argc, char ** argv)
 	// Store Matrix 1
 	matrix matrix1;
 	ioMatrix(true, file_in1, matrix1);
-
+	printMatrix(matrix1);
+	
 	// Store Matrix 2
 	matrix matrix2;
 	ioMatrix(true, file_in2, matrix2);
 
+	
 	// Now naive multiply the two matricies
 	// First check that # of colums of matrix1 is = to # rows of matrix2
 	if( matrix1.cols != matrix2.rows )
@@ -83,7 +105,7 @@ int main(int argc, char ** argv)
 	matrix matrix_out;
 
 	// Do the multiplication:
-	int number_runs = 1000; // increase this to do benchmarking
+	int number_runs = 1; // increase this to do benchmarking
 	double start, end; // for benchmarking
 	start = get_time();
 	
@@ -100,6 +122,8 @@ int main(int argc, char ** argv)
 		cout << endl;
 	}	
 
+	printMatrix(matrix_out);
+	
 	// Now write output matrix to chosen filetype
 	ioMatrix(false, file_out, matrix_out);
 	
@@ -113,32 +137,27 @@ void naive_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out)
 	// Rows = rows of left matrix
 	matrix_out.rows = matrix1.rows;
 	matrix_out.cols = matrix2.cols;
-	matrix_out.data.resize(matrix_out.rows);
-	
+	matrix_out.data = new int(matrix_out.rows * matrix_out.cols);
+
 	// Loop through every cell of the output matrix
 	for(int i = 0; i < matrix_out.rows; ++i)
 	{
-		// Resize the # of columns for every row
-		matrix_out.data[i].resize(matrix_out.cols);
 		for(int j = 0; j < matrix_out.cols; ++j)
 		{
-			// Do the multiplication:
-			
-			int total = 0;
+			// initalize result value to zero
+			matrix_out.data[i*matrix_out.rows + j] = 0;
+					
 			// Loop through every col of left matrix
 			for(int k = 0; k < matrix1.cols; ++k)
 			{
 				// Calculate and add to current cell
-				total += matrix1.data[i][k] * matrix2.data[k][j];
+				matrix_out.data[i*matrix_out.rows + j] += matrix1.data[i*matrix1.rows + k] *
+					matrix2.data[k*matrix2.rows + j];
 
-				//cout << matrix1.data[i][k] << " times " << matrix2.data[k][j] <<
-				//	" - " << i << " " << k << " x " << k << " " << j << endl;
+				cout << "data " << matrix1.data[i*matrix1.rows + k] << " - " << matrix2.data[k*matrix2.rows + j];
+				cout << " ========== " << i << " " << k << " x " << k << " " << j;
+				cout << " ========== " << matrix_out.data[i*matrix_out.rows + j] << endl;
 			}
-
-			//cout << i << " " << j << " equals " << total << endl;
-			
-			// Output answer to matrix
-			matrix_out.data[i][j] = total;
 		}
 	}
 }
@@ -160,16 +179,18 @@ void ioMatrix(bool in, const string &filename, matrix &data )
 
 			if(in)
 				hdf5::read_txt(filename, data);
-			else
+   			else
 				hdf5::write_txt(filename, data);
 		
 		}else if(filename.substr(filename.find_last_of(".") + 1) == "hdf5") {
-
+			
 			if(in)
 				hdf5::read_hdf5(filename, data);
 			else
 				hdf5::write_hdf5(filename, data);
+			
 		}
+		
 	}
 	end = get_time();
 
@@ -196,6 +217,24 @@ double get_time()
 	gettimeofday(&t, &tzp);
 	return t.tv_sec + t.tv_usec*1e-6;
 }
+//-------------------------------------------------------------------------------------------
+// For Testing
+//-------------------------------------------------------------------------------------------
+void printMatrix(matrix &data)
+{
+	cout << endl << "Printing Matrix with " << data.rows << " rows and " << data.cols << " cols." << endl;
+	for(int i = 0; i < data.rows; ++i)
+	{
+		for(int j = 0; j < data.cols; ++j)
+		{
+			cout << data.data[i*data.rows + j] << " ";
+		}
+		cout << endl;
+	}
+	cout << endl;
+}
+
+
 
 
 namespace hdf5
@@ -223,29 +262,27 @@ namespace hdf5
 		int image[dims][dims];  // TODO: make this work for non-square matricies
 		status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &image);
 
-		data.data.resize(dims);
+		// TODO: row col differenciation
+		data.data = new int[dims*dims];	
 		data.rows = dims;
 		data.cols = dims;
 		
 		// Save to file
-		for (int i=0; i<dims; i++) {
-			data.data[i].resize(dims);
-			for (int j=0; j<dims; j++) {
-      			//cout << image[i][j] << " ";
-				data.data[i][j] = image[i][j];
+		for (int i=0; i < data.rows; i++) {
+			for (int j=0; j < data.cols; j++) {
+				data.data[i*data.rows + j] = image[i][j];
 			}
-			//cout << endl;
 		}
 
 		// Close hdf5 stuff
 		for(int i = 0; i < dims; ++i)
 			delete[] image[i];
-		delete[] image;
+		//		delete[] image;
 		status = H5Sclose(space_id);
 		status = H5Dclose(dataset_id);
 		status = H5Fclose(file_id);
-		
 	}
+	
 	//-------------------------------------------------------------------------------------------
 	// Read txt
 	//-------------------------------------------------------------------------------------------	
@@ -269,32 +306,31 @@ namespace hdf5
 		int cols = atoi(cell.c_str());
 
 		// Create vector
-		data.data.resize(rows);
+		data.data = new int[rows*cols];
+		
+		//data.data.resize(rows);
 		data.rows = rows;
 		data.cols = cols;
 		
 		// Loop through data
-		for(int m = 0; m < rows; ++m)
+		for(int i = 0; i < rows; ++i)
 		{
 			getline(indata,line);
 			std::stringstream  lineStream(line);
 
-			data.data[m].resize(cols);
+			//data.data[m].resize(cols);
 			
-			for(int n = 0; n < cols; ++n)
+			for(int j = 0; j < cols; ++j)
 			{
 				// Get next number
 				getline(lineStream,cell,' ');
 				//cout << cell << " ";
 
 				// Save next number to matrix
-				data.data[m][n] = atoi(cell.c_str());
+				data.data[i*rows + j] = atoi(cell.c_str());
 			}
 			//cout << endl;
 		}
-		//cout << rows << " --- " << cols << endl;
-		
-		//cout << "data = " << data.data[1][1] << endl;
 
 	}
 	//-------------------------------------------------------------------------------------------
@@ -302,15 +338,22 @@ namespace hdf5
 	//-------------------------------------------------------------------------------------------
 	void write_txt(const string &filename, matrix &data)	
 	{
+		cout << "writing" << endl;
 		// Open a file to save to
 		ofstream outfile;
+		cout << "File name is " << filename.c_str() << endl;		
 		outfile.open (filename.c_str());
+		cout << "here" << endl;
 		outfile << data.rows << " " << data.cols << endl;
 
+		cout << " here " << endl;
 		// Save to file
 		for (int i=0; i < data.rows; i++) {
 			for (int j=0; j < data.cols; j++)
-      			outfile << data.data[i][j] << " ";
+			{
+				cout << i << " " << j << endl;
+				outfile << data.data[i*data.rows + j] << " ";
+			}
 			outfile << endl;
 		}
 		
@@ -329,15 +372,15 @@ namespace hdf5
 		int image[matrix.rows][matrix.cols];		
 		
 		// Loop through data
-		for(int m = 0; m < matrix.rows; ++m)
+		for(int i = 0; i < matrix.rows; ++i)
 		{
-			for(int n = 0; n < matrix.cols; ++n)
+			for(int j = 0; j < matrix.cols; ++j)
 			{
 				// Save next number to matrix
-				image[m][n] = matrix.data[m][n];
+				image[i][j] = matrix.data[i*matrix.rows + j];
 			}
-			//cout << endl;
 		}
+		
 		hsize_t  dims[2] = {matrix.rows, matrix.cols};
 
 		//cout << "DIMS ARE " << dims[0] << " " << dims[1] << endl;
@@ -369,9 +412,8 @@ namespace hdf5
 		// Delete variable
 		for(int i = 0; i < matrix.cols; ++i)
 			delete[] image[i];
-		delete[] image;		
+		//		delete[] image;		
 	}
-	
 };
 
 

@@ -11,12 +11,16 @@ LIBS=$(HDF5_LIBS)
 all:
 	rm -f naive_multiply
 	make naive_multiply
+#	make read_write_matrix
 
 naive_multiply:
 	$(CC) naive_multiply.cpp $(INCLUDE) $(LIB_DIR) $(LIBS) -o naive_multiply
 
+#read_write_matrix:
+#	$(CC) naive_multiply.cpp $(INCLUDE) $(LIB_DIR) $(LIBS) -o read_write_matrix
+
 clean:
-	rm naive_multiply data-1d.hdf5
+	rm naive_multiply read_write_matrix
 
 
 
