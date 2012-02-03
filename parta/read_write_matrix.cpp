@@ -201,7 +201,7 @@ namespace hdf5
 
 		//Create dataspace.  Setting maximum size to NULL sets the maximum
 		//size to be the current size.
-		space_id = H5Screate_simple (1, dims, NULL);
+		space_id = H5Screate_simple (2, dims, NULL);
 
 		//Create the dataset creation property list, set the layout to compact.
 		property_id = H5Pcreate (H5P_DATASET_CREATE);
