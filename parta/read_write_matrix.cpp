@@ -183,7 +183,7 @@ namespace hdf5
 				cout << cell << " ";
 
 				// Save next number to matrix
-				data[m][n] = atoi(cell.c_str());
+				data[n][m] = atoi(cell.c_str());
 			}
 			cout << endl;
 		}
@@ -193,6 +193,8 @@ namespace hdf5
 
 		//hsize_t  dims[1] = {data.size()};
 		hsize_t  dims[2] = {rows, cols};
+
+		cout << "DIMS ARE " << dims[0] << " " << dims[1] << endl;
     
 		//Create a new file using the default properties.
 		file_id = H5Fcreate (file_out.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -209,7 +211,7 @@ namespace hdf5
 		dataset_id = H5Dcreate (file_id, "DATASET", H5T_STD_I32LE, space_id, H5P_DEFAULT, property_id, H5P_DEFAULT);
    
 		//Write the data to the dataset.
-		status = H5Dwrite (dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &data[0]);
+		status = H5Dwrite (dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &data);
 
 		status = H5Sclose(space_id);
 		status = H5Dclose(dataset_id);
