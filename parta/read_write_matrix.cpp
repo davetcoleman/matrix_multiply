@@ -179,14 +179,17 @@ namespace hdf5
 			for(int n = 0; n < cols; ++n)
 			{
 				// Get next number
-				getline(lineStream,cell,',');
+				getline(lineStream,cell,' ');
+				cout << cell << " ";
 
 				// Save next number to matrix
 				data[m][n] = atoi(cell.c_str());
 			}
+			cout << endl;
 		}
-
-		//fill (data.begin(),data.begin()+10,5); 
+		cout << rows << " --- " << cols << endl;
+		
+		cout << "data = " << data[1][1] << endl;
 
 		//hsize_t  dims[1] = {data.size()};
 		hsize_t  dims[2] = {rows, cols};
