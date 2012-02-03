@@ -26,17 +26,13 @@ void write(const std::string &filename, std::vector<int> &data);
 /* Main Function -------------------------------------------------------- */
 int main(int argc, char ** argv)
 {
-	// Check that 2 file names have been inputted
+    std:string file_out = argv[2];
+    std:string file_in = argv[1];
+   
 
- std:string file_in = argv[1];
- std:string file_out = argv[2];
-
-
-	
 	std::vector<int> values(30,10);
 	std::fill (values.begin(),values.begin()+10,5); 
-	
-	std::string filename = "data-1d.hdf5";
+   	std::string filename = "data-1d.hdf5";
 	
 	hdf5::write(filename,values);
 	
