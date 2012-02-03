@@ -183,7 +183,7 @@ namespace hdf5
 				cout << cell << " ";
 
 				// Save next number to matrix
-				data[n][m] = atoi(cell.c_str());
+				data[m][n] = atoi(cell.c_str());
 			}
 			cout << endl;
 		}
