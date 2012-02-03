@@ -204,7 +204,8 @@ namespace hdf5
 
 		//Create the dataset creation property list, set the layout to compact.
 		property_id = H5Pcreate (H5P_DATASET_CREATE);
-		status = H5Pset_layout (property_id, H5D_COMPACT);
+		//status = H5Pset_layout (property_id, H5D_COMPACT);
+		status = H5Pset_layout (property_id, H5D_CONTIGUOUS);
 
 		// Create the dataset. 
 		dataset_id = H5Dcreate (file_id, "DATASET", H5T_STD_I32LE, space_id, H5P_DEFAULT, property_id, H5P_DEFAULT);
@@ -260,7 +261,8 @@ namespace hdf5
 
 		//Create the dataset creation property list, set the layout to compact.
 		property_id = H5Pcreate (H5P_DATASET_CREATE);
-		status = H5Pset_layout (property_id, H5D_COMPACT);
+		//status = H5Pset_layout (property_id, H5D_COMPACT);
+		status = H5Pset_layout (property_id, H5D_CONTIGUOUS);
 
 		// Create the dataset. 
 		dataset_id = H5Dcreate (file_id, "DATASET", H5T_STD_I32LE, space_id, H5P_DEFAULT, property_id, H5P_DEFAULT);
