@@ -167,7 +167,6 @@ namespace hdf5
 		int cols = atoi(cell.c_str());
 
 		// Create vector
-		//vector<int> data(rows, vector<int>(cols));
 		int data[rows][cols];		
 		
 		// Loop through data
@@ -180,12 +179,12 @@ namespace hdf5
 			{
 				// Get next number
 				getline(lineStream,cell,' ');
-				cout << cell << " ";
+				//cout << cell << " ";
 
 				// Save next number to matrix
 				data[m][n] = atoi(cell.c_str());
 			}
-			cout << endl;
+			//cout << endl;
 		}
 		cout << rows << " --- " << cols << endl;
 		
