@@ -146,11 +146,11 @@ int main(int argc, char ** argv)
 	}
 	end = get_time();
 
-	if(number_runs > 1)
-	{
+	//	if(number_runs > 1)
+	//{
 		cout << "Matrix Multiply ran in " << (end-start) << " seconds " << endl;
 		cout << endl;
-	}	
+		//}	
 
 	//printMatrix(matrix_out);
 	
