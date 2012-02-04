@@ -16,6 +16,9 @@ all:
 naive_multiply:
 	$(CC) naive_multiply.cpp $(INCLUDE) $(LIB_DIR) $(LIBS) -o naive_multiply
 
+debug:
+	$(CC) -Wall -g naive_multiply.cpp $(INCLUDE) $(LIB_DIR) $(LIBS) -o naive_multiply
+
 #read_write_matrix:
 #	$(CC) naive_multiply.cpp $(INCLUDE) $(LIB_DIR) $(LIBS) -o read_write_matrix
 
