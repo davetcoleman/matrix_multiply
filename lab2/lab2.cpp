@@ -1,8 +1,11 @@
-/* Naive_Multiply
+/* Lab2
    CSCI 5576 High Performance Scientific Computing
    Dave Coleman | david.t.coleman@colorado.edu
 
    2/2/2012
+
+   Note - this one file includes all the source code for all the executables. The Make file generates
+   seperate versions for each function.
 
    You will generate three executables that all take three arguments. The first two
    arguments are matrices that you will multiply together. The third will be the name of the
@@ -20,15 +23,18 @@
 #include "hdf5.h"
 #include <math.h>
 
+#if defined USE_INTEL
+#include "mkl_cblas.h"
+#include <stdio.h>
+#endif
+
 using namespace std;
 
 //-------------------------------------------------------------------------------------------
 // Matrix Structure
 //-------------------------------------------------------------------------------------------
 struct matrix{
-	
-	//	vector< vector<int> > data;
-	int *data;
+	double *data;
 	int rows;
 	int cols;
 };
@@ -40,6 +46,7 @@ void ioMatrix(bool in, const string &filename, matrix &data );
 double get_time();
 void naive_multiply( matrix &matrix1, matrix &matrix2, matrix &matrix_out);
 void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int block_size);
+void intel_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out);
 void printMatrix(matrix &data);
 
 namespace hdf5
@@ -85,17 +92,15 @@ int main(int argc, char ** argv)
 	string file_in2 = argv[2];	
 	string file_out = argv[3];
 
-	int block_size = 0;
+	int block_size = 2; // default value TODO: not optimized
 	// Check for 4th parameter
 	if(argc > 4)
-	{
 		block_size = atoi(argv[4]);
-	}
 	
 	// Store Matrix 1
 	matrix matrix1;
 	ioMatrix(true, file_in1, matrix1);
-	printMatrix(matrix1);
+	//printMatrix(matrix1);
 	
 	// Store Matrix 2
 	matrix matrix2;
@@ -122,11 +127,22 @@ int main(int argc, char ** argv)
 	
 	for(int test = 0; test < number_runs; ++test)
 	{
-		// Do the multiply
-		if(block_size > 0)
-			block_multiply(matrix1, matrix2, matrix_out, block_size);
-   		else
-			naive_multiply(matrix1, matrix2, matrix_out);	
+		if(number_runs > 1)
+			cout << "Starting run " << number_runs << endl;
+
+		// The Makefile tells the compiler which matrix multiply to use.
+		// Naive method is chosen by default
+#if defined USE_BLOCK
+		cout << "Block Matrix Multiply" << endl;
+   		block_multiply(matrix1, matrix2, matrix_out, block_size);
+#elif defined USE_INTEL
+		cout << "Intel Matrix Multiply" << endl;
+   		intel_multiply(matrix1, matrix2, matrix_out);
+#else
+		cout << "Naive Matrix Multiply" << endl;		
+   		naive_multiply(matrix1, matrix2, matrix_out);
+#endif
+		
 	}
 	end = get_time();
 
@@ -139,7 +155,7 @@ int main(int argc, char ** argv)
 	//printMatrix(matrix_out);
 	
 	// Now write output matrix to chosen filetype
-	ioMatrix(false, file_out, matrix_out);
+	//ioMatrix(false, file_out, matrix_out);
 	
     return EXIT_SUCCESS;
 }
@@ -151,7 +167,7 @@ void naive_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out)
 	// Rows = rows of left matrix
 	matrix_out.rows = matrix1.rows;
 	matrix_out.cols = matrix2.cols;
-	matrix_out.data = new int[matrix_out.rows * matrix_out.cols];
+	matrix_out.data = new double[matrix_out.rows * matrix_out.cols];
 
 	// Loop through every cell of the output matrix
 	for(int i = 0; i < matrix_out.rows; ++i)
@@ -182,13 +198,13 @@ void naive_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out)
 //-------------------------------------------------------------------------------------------
 void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int block_size)
 {
-	cout << "Starting Block Multiply" << endl;
-	cout << "Block size: " << block_size << endl;
+	//cout << "Starting Block Multiply" << endl;
+	//cout << "Block size: " << block_size << endl;
 
 	// Rows = rows of left matrix
 	matrix_out.rows = matrix1.rows;
 	matrix_out.cols = matrix2.cols;
-	matrix_out.data = new int[matrix_out.rows * matrix_out.cols];
+	matrix_out.data = new double[matrix_out.rows * matrix_out.cols];
 	
 	// Initialize all values to zero
 	for(int i = 0; i < matrix_out.rows * matrix_out.cols; ++i)
@@ -197,41 +213,42 @@ void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int bl
 	int row_blocks = int(ceil( double(matrix_out.rows) / block_size ));
 	int col_blocks = int(ceil( double(matrix_out.cols) / block_size ));	
 
-	cout << "Block rows: " << row_blocks << endl;
-	cout << "Block cols: " << col_blocks << endl;
+	//cout << "Block rows: " << row_blocks << endl;
+	//cout << "Block cols: " << col_blocks << endl;
 
 	// Loop through every cell of the output matrix
 	for(int ii = 0; ii < row_blocks; ++ii)
 	{
-		cout << "for ii= " << ii<< endl;
+		//cout << "for ii= " << ii<< endl;
 		for(int jj = 0; jj < col_blocks; ++jj)
 		{
-			cout << "for jj= " << jj<< endl;
+			//cout << "for jj= " << jj<< endl;
 			for(int kk = 0; kk < row_blocks; ++kk)
 			{
-				cout << "for kk= " << kk<< endl;
+				//cout << "for kk= " << kk<< endl;
 				for(int i = ii*block_size; i < min(ii*block_size + block_size, matrix_out.rows); ++i)
 				{
-					cout << "for i= " << i<< endl;
+					//cout << "for i= " << i<< endl;
 					for(int j = jj*block_size; j < min(jj*block_size + block_size, matrix_out.cols); ++j)
 					{
-						cout << "for j= " << j<< endl;
+						//cout << "for j= " << j<< endl;
 						
 						// Loop through every col of left matrix
 						for(int k = kk*block_size; k < min(kk*block_size + block_size, matrix_out.cols); ++k)
 						{
-							cout << "for k= " << k << endl;
+							/*cout << "for k= " << k << endl;
 							
-							cout << "data " << matrix1.data[i*matrix1.rows + k] << " - ";
-   							cout            << matrix2.data[k*matrix2.rows + j];
-							cout << " ========== " << i << " " << k << " x " << k << " " << j;
-							cout << " -> " << i << " " << j;
-				
+							  cout << "data " << matrix1.data[i*matrix1.rows + k] << " - ";
+							  cout            << matrix2.data[k*matrix2.rows + j];
+							  cout << " ========== " << i << " " << k << " x " << k << " " << j;
+							  cout << " -> " << i << " " << j;
+							*/
+							
 							// Calculate and add to current cell
 							matrix_out.data[i*matrix_out.rows + j] += matrix1.data[i*matrix1.rows + k] *
 								matrix2.data[k*matrix2.rows + j];
 				
-							cout << " ========== " << matrix_out.data[i*matrix_out.rows + j] << endl;
+							//cout << " ========== " << matrix_out.data[i*matrix_out.rows + j] << endl;
 						
 						}
 					}
@@ -240,10 +257,36 @@ void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int bl
 		}
 	}
 	
-	printMatrix(matrix_out);
+	//printMatrix(matrix_out);
 	
 }
+//-------------------------------------------------------------------------------------------
+// Multiply Method 3
+//-------------------------------------------------------------------------------------------
+void intel_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out)
+{
+#if defined USE_INTEL	
 
+	// Rows = rows of left matrix
+	matrix_out.rows = matrix1.rows;
+	matrix_out.cols = matrix2.cols;
+	matrix_out.data = new double[matrix_out.rows * matrix_out.cols];
+	
+	// Initialize all values to zero
+	for(int i = 0; i < matrix_out.rows * matrix_out.cols; ++i)
+   		matrix_out.data[i] = 0;
+	
+	int lda = matrix1.rows;
+	int ldb = matrix2.rows;
+	int ldc = matrix_out.rows; 
+	
+	//                                                      M             N             K           alpha
+	cblas_dgemm (CblasRowMajor, CblasNoTrans, CblasNoTrans, matrix1.rows, matrix2.cols, matrix1.cols, 1.0,
+				 matrix1.data, lda, matrix2.data, ldb, 0.0, matrix_out.data, ldc);
+	//           A             lda  B             ldb  beta C                ldc
+	
+#endif
+}
 //-------------------------------------------------------------------------------------------
 // Read and write matrix depending on file type
 //-------------------------------------------------------------------------------------------
@@ -346,7 +389,7 @@ namespace hdf5
 		status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &image);
 
 		// TODO: row col differenciation
-		data.data = new int[dims*dims];	
+		data.data = new double[dims*dims];	
 		data.rows = dims;
 		data.cols = dims;
 		
@@ -389,7 +432,7 @@ namespace hdf5
 		int cols = atoi(cell.c_str());
 
 		// Create vector
-		data.data = new int[rows*cols];
+		data.data = new double[rows*cols];
 		
 		//data.data.resize(rows);
 		data.rows = rows;
@@ -457,7 +500,7 @@ namespace hdf5
 			{
 				// Save next number to matrix
 				//cout <<  matrix.data[i*matrix.rows + j] << " ";
-				image[i][j] = matrix.data[i*matrix.rows + j];
+				image[i][j] = int(matrix.data[i*matrix.rows + j]);
 			}
 			//cout << endl;
 		}
