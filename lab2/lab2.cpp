@@ -92,7 +92,7 @@ int main(int argc, char ** argv)
 	string file_in2 = argv[2];	
 	string file_out = argv[3];
 
-	int block_size = 2; // default value TODO: not optimized
+	int block_size = 32;
 	// Check for 4th parameter
 	if(argc > 4)
 		block_size = atoi(argv[4]);
@@ -112,7 +112,8 @@ int main(int argc, char ** argv)
 	// First check that # of colums of matrix1 is = to # rows of matrix2
 	if( matrix1.cols != matrix2.rows )
 	{
-		cout << "Error: number of columns of the left matrix is not equal to the number of rows of the right matrix."
+		cout << "Error: number of columns of the left matrix is not equal to the number of "
+			 << "rows of the right matrix."
 			 << endl;
 		return EXIT_FAILURE;
 	}
@@ -379,13 +380,17 @@ namespace hdf5
 		//int length = H5Sget_simple_extent_npoints(space_id);
 		
 		// Get actual dimentions:
-		hsize_t dims, maxdims;
+		hsize_t dims;
+   		hsize_t maxdims;
 		//int dimentions = H5Sget_simple_extent_dims(space_id, &dims, &maxdims);
+		cout << "here" << endl;		
 		H5Sget_simple_extent_dims(space_id, &dims, &maxdims);
-		//cout << endl << "Dimensions are " << dimentions << " with dims " << dims
-		//	 << " and maxdims " << maxdims << " and total length " << length << endl;
+		cout << "here2" << endl;
+		cout << dims << " " << maxdims << " output" << endl;
 		
-		int image[dims][dims];  // TODO: make this work for non-square matricies
+		//cout << endl << "Dims " << dims[0] << " " << dims[1] << " and maxdims " << &maxdims << endl;
+		
+		int image[ dims ][ dims ];  // TODO: make this work for non-square matricies
 		status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &image);
 
 		// TODO: row col differenciation
@@ -393,13 +398,14 @@ namespace hdf5
 		data.rows = dims;
 		data.cols = dims;
 		
-		// Save to file
+		// Convert to basic array
 		for (int i=0; i < data.rows; i++) {
 			for (int j=0; j < data.cols; j++) {
 				data.data[i*data.rows + j] = image[i][j];
 			}
 		}
-
+		
+		
 		// Close hdf5 stuff
 		//for(unsigned int i = 0; i < dims; ++i)
 		//	delete[] image[i];
@@ -407,6 +413,7 @@ namespace hdf5
 		status = H5Sclose(space_id);
 		status = H5Dclose(dataset_id);
 		status = H5Fclose(file_id);
+		
 	}
 	
 	//-------------------------------------------------------------------------------------------
