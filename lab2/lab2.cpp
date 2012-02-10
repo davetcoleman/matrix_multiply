@@ -62,6 +62,23 @@ namespace hdf5
 //-------------------------------------------------------------------------------------------
 int main(int argc, char ** argv)
 {
+	/*
+	// Debug:
+	cout << "Converting files" << endl;
+	// Read in values
+	string file_in1 = "m10_8.txt";
+	string file_out = "m10_8_new.txt";
+	
+	// Read and write matrix
+	matrix matrix1;
+	ioMatrix(true, file_in1, matrix1);
+	printMatrix(matrix1);
+	ioMatrix(false, file_out, matrix1);
+
+	// Done with program
+	return EXIT_SUCCESS;
+	*/
+
 	// Check that 3 file names have been inputted
 	if(argc < 4)
 	{
@@ -80,6 +97,7 @@ int main(int argc, char ** argv)
 			// Read and write matrix
 			matrix matrix1;
 			ioMatrix(true, file_in1, matrix1);
+			printMatrix(matrix1);
 			ioMatrix(false, file_out, matrix1);
 
 			// Done with program
@@ -149,9 +167,9 @@ int main(int argc, char ** argv)
 
 	//	if(number_runs > 1)
 	//{
-		cout << "Matrix Multiply ran in " << (end-start) << " seconds " << endl;
-		cout << endl;
-		//}	
+	cout << "Matrix Multiply ran in " << (end-start) << " seconds " << endl;
+	cout << endl;
+	//}	
 
 	//printMatrix(matrix_out);
 	
@@ -159,7 +177,7 @@ int main(int argc, char ** argv)
 	//ioMatrix(false, file_out, matrix_out);
 	
     return EXIT_SUCCESS;
-}
+	}
 //-------------------------------------------------------------------------------------------
 // Multiply Method 1
 //-------------------------------------------------------------------------------------------
@@ -177,19 +195,19 @@ void naive_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out)
 		{
 			// initalize result value to zero
 			//cout << "writing to location " << i*matrix_out.rows + j << endl;
-			matrix_out.data[i*matrix_out.rows + j] = 0;
+			matrix_out.data[i*matrix_out.cols + j] = 0;
 					
 			// Loop through every col of left matrix
 			for(int k = 0; k < matrix1.cols; ++k)
 			{
-				//cout << "data " << matrix1.data[i*matrix1.rows + k] << " - " << matrix2.data[k*matrix2.rows + j];
+				//cout << "data " << matrix1.data[i*matrix1.cols + k] << " - " << matrix2.data[k*matrix2.cols + j];
 				//cout << " ========== " << i << " " << k << " x " << k << " " << j;
 				
 				// Calculate and add to current cell
-				matrix_out.data[i*matrix_out.rows + j] += matrix1.data[i*matrix1.rows + k] *
-					matrix2.data[k*matrix2.rows + j];
+				matrix_out.data[i*matrix_out.cols + j] += matrix1.data[i*matrix1.cols + k] *
+					matrix2.data[k*matrix2.cols + j];
 				
-				//cout << " ========== " << matrix_out.data[i*matrix_out.rows + j] << endl;
+				//cout << " ========== " << matrix_out.data[i*matrix_out.cols + j] << endl;
 			}
 		}
 	}
@@ -246,8 +264,8 @@ void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int bl
 							*/
 							
 							// Calculate and add to current cell
-							matrix_out.data[i*matrix_out.rows + j] += matrix1.data[i*matrix1.rows + k] *
-								matrix2.data[k*matrix2.rows + j];
+							matrix_out.data[i*matrix_out.cols + j] += matrix1.data[i*matrix1.cols + k] *
+								matrix2.data[k*matrix2.cols + j];
 				
 							//cout << " ========== " << matrix_out.data[i*matrix_out.rows + j] << endl;
 						
@@ -353,7 +371,7 @@ void printMatrix(matrix &data)
 	{
 		for(int j = 0; j < data.cols; ++j)
 		{
-			cout << data.data[i*data.rows + j] << " ";
+			cout << data.data[i*data.cols + j] << " ";
 		}
 		cout << endl;
 	}
@@ -401,7 +419,7 @@ namespace hdf5
 		// Convert to basic array
 		for (int i=0; i < data.rows; i++) {
 			for (int j=0; j < data.cols; j++) {
-				data.data[i*data.rows + j] = image[i][j];
+				data.data[i*data.cols + j] = image[i][j];
 			}
 		}
 		
@@ -421,50 +439,46 @@ namespace hdf5
 	//-------------------------------------------------------------------------------------------	
 	void read_txt(const string &filename, matrix &data)
 	{
-		// Read the txt file into a vector
+		int rows, cols;
+		double buffer;	   
+
+		// Read the txt file into an array
 		std::ifstream indata(filename.c_str());
-		std::string line;
-		std::string cell;
 
-		// The first line should have the number of rows and columns
-		std::getline(indata, line);
-		std::stringstream lineStream(line);
-		
-		// Number of rows:		
-		getline(lineStream,cell,' ');		
-		int rows = atoi(cell.c_str());
-
-		// Number of columns:
-		getline(lineStream,cell,' ');
-		int cols = atoi(cell.c_str());
-
-		// Create vector
-		data.data = new double[rows*cols];
-		
-		//data.data.resize(rows);
+		// Input rows and cols
+		indata >> rows >> cols;
 		data.rows = rows;
 		data.cols = cols;
 		
-		// Loop through data
+		// Create array
+		int size = rows*cols;
+		data.data = new double[size];
+
+   		// Loop through data
 		for(int i = 0; i < rows; ++i)
 		{
-			getline(indata,line);
-			std::stringstream  lineStream(line);
-
-			//data.data[m].resize(cols);
-			
-			for(int j = 0; j < cols; ++j)
+			cout << "ROW " << i << endl;
+   			for(int j = 0; j < cols; ++j)
 			{
-				// Get next number
-				getline(lineStream,cell,' ');
-				//cout << cell << " ";
+				indata >> buffer;
 
+				cout << buffer << endl;
+
+					cout << "index = " << (i*cols + j) << " of " << size << endl;
+					cout << "i = " << i << "  j = " << j << " rows = " << rows << " cols=" << cols << endl;
+					
+				if(i*cols + j > size)
+				{
+					
+					cout << "ERROR" << endl;
+					throw;
+				}
+				
 				// Save next number to matrix
-				data.data[i*rows + j] = atoi(cell.c_str());
+				data.data[i*cols + j] = buffer;
 			}
-			//cout << endl;
 		}
-
+		cout << "done" << endl;
 	}
 	//-------------------------------------------------------------------------------------------
 	// Write txt
@@ -482,7 +496,7 @@ namespace hdf5
 			for (int j=0; j < data.cols; j++)
 			{
 				//cout << i << " " << j << endl;
-				outfile << data.data[i*data.rows + j] << " ";
+				outfile << data.data[i*data.cols + j] << " ";
 			}
 			outfile << endl;
 		}
@@ -508,7 +522,7 @@ namespace hdf5
 			{
 				// Save next number to matrix
 				//cout <<  matrix.data[i*matrix.rows + j] << " ";
-				image[i][j] = int(matrix.data[i*matrix.rows + j]);
+				image[i][j] = int(matrix.data[i*matrix.cols + j]);
 			}
 			//cout << endl;
 		}

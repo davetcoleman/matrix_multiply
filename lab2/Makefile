@@ -1,4 +1,4 @@
-CC=/usr/bin/g++
+CC=/usr/bin/g++ -g -Wall
 CXX=/curc/tools/nonfree/redhat_5_x86_64/ics_2012.0.032/composer_xe_2011_sp1.6.233/bin/intel64/icpc
 
 HDF5_INCLUDE=-I/curc/tools/free/redhat_5_x86_64/hdf5-1.8.7/include
@@ -36,9 +36,6 @@ intel:
 
 read_write:
 	$(CC) lab2.cpp $(INCLUDE) $(LIB_DIR) $(LIBS) -o read_write_matrix
-
-debug:
-	$(CC) -Wall -g lab2.cpp $(INCLUDE) $(LIB_DIR) $(LIBS) -o naive_multiply
 
 clean:
 	rm -f naive_multiply block_multiply intel_multiply read_write_matrix
