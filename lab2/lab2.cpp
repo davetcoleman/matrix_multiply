@@ -215,65 +215,69 @@ void naive_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out)
 //-------------------------------------------------------------------------------------------
 void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int block_size)
 {
-	cout << "Starting Block Multiply" << endl;
-	cout << "Block size: " << block_size << endl;
+	//cout << "Starting Block Multiply" << endl;
+	//cout << "Block size: " << block_size << endl;
 
 	// Rows = rows of left matrix
 	matrix_out.rows = matrix1.rows;
 	matrix_out.cols = matrix2.cols;
 	matrix_out.data = new double[matrix_out.rows * matrix_out.cols];
-	
+
 	// Initialize all values to zero
 	for(int i = 0; i < matrix_out.rows * matrix_out.cols; ++i)
-   		matrix_out.data[i] = 0;
-		   
-	int row_blocks = int(ceil( double( max(matrix1.rows, matrix2.rows) ) / block_size ));
-	int col_blocks = int(ceil( double( max(matrix1.cols, matrix2.cols) ) / block_size ));	
+		matrix_out.data[i] = 0;
 
-	cout << "Block rows: " << row_blocks << endl;
-	cout << "Block cols: " << col_blocks << endl;
+	int row_blocks = int(ceil( double(matrix_out.rows) / block_size ));
+	int col_blocks = int(ceil( double(matrix_out.cols) / block_size ));
+
+	//cout << "Block rows: " << row_blocks << endl;
+	//cout << "Block cols: " << col_blocks << endl;
 
 	// Loop through every cell of the output matrix
 	for(int ii = 0; ii < row_blocks; ++ii)
 	{
+		//cout << "for ii= " << ii<< endl;
 		for(int jj = 0; jj < col_blocks; ++jj)
 		{
-			cout << "ROW " << ii << " COL "  << jj<< " !!!!!!!!!!! " << endl << endl;
+			//cout << "for jj= " << jj<< endl;
 			for(int kk = 0; kk < row_blocks; ++kk)
 			{
-				cout << "for kk= " << kk<< endl;
-				for(int i = ii*block_size; i < min(ii*block_size + block_size, max(matrix1.rows, matrix2.rows)); ++i)
+				//cout << "for kk= " << kk<< endl;
+				for(int i = ii*block_size; i < min(ii*block_size + block_size, matrix_out.rows); ++i)
 				{
-					cout << "for i= " << i<< endl;
-					for(int j = jj*block_size; j < min(jj*block_size + block_size, max(matrix2.cols, matrix1.cols)); ++j)
+					//cout << "for i= " << i<< endl;
+					for(int j = jj*block_size; j < min(jj*block_size + block_size, matrix_out.cols); ++j)
 					{
-						cout << "for j= " << j<< endl;
-						
+						//cout << "for j= " << j<< endl;
+
 						// Loop through every col of left matrix
 						for(int k = kk*block_size; k < min(kk*block_size + block_size, matrix_out.cols); ++k)
 						{
-							cout << "for k= " << k << endl;
-							
-							  cout << "data " << matrix1.data[i*matrix1.cols + k] << " - ";
-							  cout            << matrix2.data[k*matrix2.cols + j];
+							/*cout << "for k= " << k << endl;
+
+							  cout << "data " << matrix1.data[i*matrix1.rows + k] << " - ";
+							  cout            << matrix2.data[k*matrix2.rows + j];
 							  cout << " ========== " << i << " " << k << " x " << k << " " << j;
 							  cout << " -> " << i << " " << j;
-							
-							
+							*/
+
 							// Calculate and add to current cell
-							matrix_out.data[i*matrix_out.cols + j] +=
-								matrix1.data[i*matrix1.cols + k] * matrix2.data[k*matrix2.cols + j];
-				
-							cout << " ========== " << matrix_out.data[i*matrix_out.cols + j] << endl;
-						
+							matrix_out.data[i*matrix_out.cols + j] += matrix1.data[i*matrix1.cols + k] *
+								matrix2.data[k*matrix2.cols + j];
+
+							//cout << " ========== " << matrix_out.data[i*matrix_out.rows + j] << endl;
+
 						}
 					}
 				}
 			}
 		}
 	}
-	
+
+	//printMatrix(matrix_out);
+
 }
+
 //-------------------------------------------------------------------------------------------
 // Multiply Method 3
 //-------------------------------------------------------------------------------------------
