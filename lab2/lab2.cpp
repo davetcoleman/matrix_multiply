@@ -236,19 +236,18 @@ void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int bl
 	// Loop through every cell of the output matrix
 	for(int ii = 0; ii < row_blocks; ++ii)
 	{
-		//cout << "for ii= " << ii<< endl;
 		for(int jj = 0; jj < col_blocks; ++jj)
 		{
-			//cout << "for jj= " << jj<< endl;
+			cout << "ROW " << ii << " COL "  << jj<< " !!!!!!!!!!! " << endl << endl;
 			for(int kk = 0; kk < row_blocks; ++kk)
 			{
-				//cout << "for kk= " << kk<< endl;
-				for(int i = ii*block_size; i < min(ii*block_size + block_size, matrix_out.rows); ++i)
+				cout << "for kk= " << kk<< endl;
+				for(int i = ii*block_size; i < min(ii*block_size + block_size, max(matrix1.rows, matrix2.rows)); ++i)
 				{
-					//cout << "for i= " << i<< endl;
-					for(int j = jj*block_size; j < min(jj*block_size + block_size, matrix_out.cols); ++j)
+					cout << "for i= " << i<< endl;
+					for(int j = jj*block_size; j < min(jj*block_size + block_size, max(matrix2.cols, matrix1.cols)); ++j)
 					{
-						//cout << "for j= " << j<< endl;
+						cout << "for j= " << j<< endl;
 						
 						// Loop through every col of left matrix
 						for(int k = kk*block_size; k < min(kk*block_size + block_size, matrix_out.cols); ++k)
