@@ -457,28 +457,20 @@ namespace hdf5
    		// Loop through data
 		for(int i = 0; i < rows; ++i)
 		{
-			cout << "ROW " << i << endl;
+			//cout << "ROW " << i << endl;
    			for(int j = 0; j < cols; ++j)
 			{
 				indata >> buffer;
 
-				cout << buffer << endl;
-
-					cout << "index = " << (i*cols + j) << " of " << size << endl;
-					cout << "i = " << i << "  j = " << j << " rows = " << rows << " cols=" << cols << endl;
-					
-				if(i*cols + j > size)
-				{
-					
-					cout << "ERROR" << endl;
-					throw;
-				}
+				/*cout << buffer << endl;
+   				cout << "index = " << (i*cols + j) << " of " << size << endl;
+				cout << "i = " << i << "  j = " << j << " rows = " << rows << " cols=" << cols << endl;
+				*/	
 				
 				// Save next number to matrix
 				data.data[i*cols + j] = buffer;
 			}
 		}
-		cout << "done" << endl;
 	}
 	//-------------------------------------------------------------------------------------------
 	// Write txt
