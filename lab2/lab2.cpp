@@ -97,7 +97,7 @@ int main(int argc, char ** argv)
 			// Read and write matrix
 			matrix matrix1;
 			ioMatrix(true, file_in1, matrix1);
-			printMatrix(matrix1);
+			//printMatrix(matrix1);
 			ioMatrix(false, file_out, matrix1);
 
 			// Done with program
@@ -395,34 +395,32 @@ namespace hdf5
 		dataset_id = H5Dopen(file_id, "DATASET", H5P_DEFAULT);
 		space_id = H5Dget_space(dataset_id);
 
-		//int length = H5Sget_simple_extent_npoints(space_id);
-		
 		// Get actual dimentions:
-		hsize_t dims;
    		hsize_t maxdims;
-		//int dimentions = H5Sget_simple_extent_dims(space_id, &dims, &maxdims);
-		cout << "here" << endl;		
-		H5Sget_simple_extent_dims(space_id, &dims, &maxdims);
-		cout << "here2" << endl;
-		cout << dims << " " << maxdims << " output" << endl;
+		hsize_t  dims[2]; 
+
+		int dimentions = H5Sget_simple_extent_dims(space_id, dims, &maxdims);
+		if( dimentions != 2 )
+		{
+			cout << "This program only handles matricies of 2 dimentions!" << endl;
+			throw;
+		}
 		
-		//cout << endl << "Dims " << dims[0] << " " << dims[1] << " and maxdims " << &maxdims << endl;
+		cout << endl << "Dimensions: row: " << dims[0] << " col: " << dims[1] << endl;
 		
-		int image[ dims ][ dims ];  // TODO: make this work for non-square matricies
+		int image[ dims[0] ][ dims[1] ]; 
 		status = H5Dread(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &image);
 
-		// TODO: row col differenciation
-		data.data = new double[dims*dims];	
-		data.rows = dims;
-		data.cols = dims;
+		data.data = new double[dims[0]*dims[1]];	
+		data.rows = dims[0];
+		data.cols = dims[1];
 		
 		// Convert to basic array
 		for (int i=0; i < data.rows; i++) {
 			for (int j=0; j < data.cols; j++) {
 				data.data[i*data.cols + j] = image[i][j];
 			}
-		}
-		
+		}		
 		
 		// Close hdf5 stuff
 		//for(unsigned int i = 0; i < dims; ++i)
