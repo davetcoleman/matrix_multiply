@@ -118,11 +118,12 @@ int main(int argc, char ** argv)
 	// Store Matrix 1
 	matrix matrix1;
 	ioMatrix(true, file_in1, matrix1);
-	//printMatrix(matrix1);
+	printMatrix(matrix1);
 	
 	// Store Matrix 2
 	matrix matrix2;
 	ioMatrix(true, file_in2, matrix2);
+	printMatrix(matrix2);
 
 	
 	// Now naive multiply the two matricies -----------------------------------
@@ -165,16 +166,13 @@ int main(int argc, char ** argv)
 	}
 	end = get_time();
 
-	//	if(number_runs > 1)
-	//{
 	cout << "Matrix Multiply ran in " << (end-start) << " seconds " << endl;
 	cout << endl;
-	//}	
 
-	//printMatrix(matrix_out);
+	printMatrix(matrix_out);
 	
 	// Now write output matrix to chosen filetype
-	//ioMatrix(false, file_out, matrix_out);
+	ioMatrix(false, file_out, matrix_out);
 	
     return EXIT_SUCCESS;
 	}
@@ -217,8 +215,8 @@ void naive_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out)
 //-------------------------------------------------------------------------------------------
 void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int block_size)
 {
-	//cout << "Starting Block Multiply" << endl;
-	//cout << "Block size: " << block_size << endl;
+	cout << "Starting Block Multiply" << endl;
+	cout << "Block size: " << block_size << endl;
 
 	// Rows = rows of left matrix
 	matrix_out.rows = matrix1.rows;
@@ -229,11 +227,11 @@ void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int bl
 	for(int i = 0; i < matrix_out.rows * matrix_out.cols; ++i)
    		matrix_out.data[i] = 0;
 		   
-	int row_blocks = int(ceil( double(matrix_out.rows) / block_size ));
-	int col_blocks = int(ceil( double(matrix_out.cols) / block_size ));	
+	int row_blocks = int(ceil( double( max(matrix1.rows, matrix2.rows) ) / block_size ));
+	int col_blocks = int(ceil( double( max(matrix1.cols, matrix2.cols) ) / block_size ));	
 
-	//cout << "Block rows: " << row_blocks << endl;
-	//cout << "Block cols: " << col_blocks << endl;
+	cout << "Block rows: " << row_blocks << endl;
+	cout << "Block cols: " << col_blocks << endl;
 
 	// Loop through every cell of the output matrix
 	for(int ii = 0; ii < row_blocks; ++ii)
@@ -255,19 +253,19 @@ void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int bl
 						// Loop through every col of left matrix
 						for(int k = kk*block_size; k < min(kk*block_size + block_size, matrix_out.cols); ++k)
 						{
-							/*cout << "for k= " << k << endl;
+							cout << "for k= " << k << endl;
 							
-							  cout << "data " << matrix1.data[i*matrix1.rows + k] << " - ";
-							  cout            << matrix2.data[k*matrix2.rows + j];
+							  cout << "data " << matrix1.data[i*matrix1.cols + k] << " - ";
+							  cout            << matrix2.data[k*matrix2.cols + j];
 							  cout << " ========== " << i << " " << k << " x " << k << " " << j;
 							  cout << " -> " << i << " " << j;
-							*/
+							
 							
 							// Calculate and add to current cell
-							matrix_out.data[i*matrix_out.cols + j] += matrix1.data[i*matrix1.cols + k] *
-								matrix2.data[k*matrix2.cols + j];
+							matrix_out.data[i*matrix_out.cols + j] +=
+								matrix1.data[i*matrix1.cols + k] * matrix2.data[k*matrix2.cols + j];
 				
-							//cout << " ========== " << matrix_out.data[i*matrix_out.rows + j] << endl;
+							cout << " ========== " << matrix_out.data[i*matrix_out.cols + j] << endl;
 						
 						}
 					}
@@ -275,8 +273,6 @@ void block_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out, int bl
 			}
 		}
 	}
-	
-	//printMatrix(matrix_out);
 	
 }
 //-------------------------------------------------------------------------------------------
@@ -291,18 +287,17 @@ void intel_multiply(matrix &matrix1, matrix &matrix2, matrix &matrix_out)
 	matrix_out.cols = matrix2.cols;
 	matrix_out.data = new double[matrix_out.rows * matrix_out.cols];
 	
-	// Initialize all values to zero
-	for(int i = 0; i < matrix_out.rows * matrix_out.cols; ++i)
-   		matrix_out.data[i] = 0;
-	
-	int lda = matrix1.rows;
-	int ldb = matrix2.rows;
-	int ldc = matrix_out.rows; 
-	
-	//                                                      M             N             K           alpha
+	// The major stride tells BLAS/LAPACK how large the matrix actually is in terms of the storage array,
+	// rather than the size presented to the user.
+	int lda = matrix1.cols;  // major stride for the A matrix
+	int ldb = matrix2.cols;  // major stride for the B matrix
+	int ldc = matrix_out.cols; // major stride for the C matrix
+
+	// C = x*A*B + y*C
+	//                Row?                                  A.rows        B.cols        A.cols        multiply scalar
 	cblas_dgemm (CblasRowMajor, CblasNoTrans, CblasNoTrans, matrix1.rows, matrix2.cols, matrix1.cols, 1.0,
 				 matrix1.data, lda, matrix2.data, ldb, 0.0, matrix_out.data, ldc);
-	//           A             lda  B             ldb  beta C                ldc
+	//           A             lda  B             ldb  C scalar  C           ldc
 	
 #endif
 }
@@ -531,7 +526,7 @@ namespace hdf5
 		//Create the dataset creation property list, set the layout to compact.
 		property_id = H5Pcreate (H5P_DATASET_CREATE);
 		//status = H5Pset_layout (property_id, H5D_COMPACT);
-		status = H5Pset_layout (property_id, H5D_CONTIGUOUS);
+		status = H5Pset_layout (property_id, H5D_CONTIGUOUS); //TODO: or is it H5D_CONTINUOUS?
 
 		// Create the dataset. 
 		dataset_id = H5Dcreate (file_id, "DATASET", H5T_STD_I32LE, space_id, H5P_DEFAULT, property_id, H5P_DEFAULT);
