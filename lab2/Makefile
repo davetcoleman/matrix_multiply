@@ -1,4 +1,4 @@
-CC=/usr/bin/g++ -g -Wall
+CC=/usr/bin/g++ -O3
 CXX=/curc/tools/nonfree/redhat_5_x86_64/ics_2012.0.032/composer_xe_2011_sp1.6.233/bin/intel64/icpc
 
 HDF5_INCLUDE=-I/curc/tools/free/redhat_5_x86_64/hdf5-1.8.7/include
