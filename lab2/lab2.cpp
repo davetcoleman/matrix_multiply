@@ -477,7 +477,8 @@ namespace hdf5
 		outfile << data.rows << " " << data.cols << endl;
 
 		// Save to file
-		for (int i=0; i < data.rows; i++) {
+		for (int i=0; i < data.rows; i++)
+		{
 			for (int j=0; j < data.cols; j++)
 			{
 				//cout << i << " " << j << endl;
